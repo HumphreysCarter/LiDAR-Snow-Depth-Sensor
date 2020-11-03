@@ -6,6 +6,24 @@ import numpy as np
 import pandas as pd
 from metpy.units import units
 
+def get_air_temperature(wu_station, api_key):
+    """
+    Get current air temperature using Weather Underground API
+    """
+    # Generate data URL
+    dataURL = f'https://api.weather.com/v2/pws/observations/current?stationId={wu_station}&format=json&units=m&apiKey={api_key}'
+    
+    # Get data from API
+    data = pd.read_json(dataURL)
+    
+    # Extract air temeprature
+    air_temp = data.values[0][0]['metric']['temp']
+    
+    # Attach units to value
+    air_temp = air_temp * units.degC
+    
+    return air_temp
+
 def calc_speed_of_sound(T):
     """
     Calculates speed of sound based on air temperature
@@ -73,18 +91,22 @@ def process_sensor_data(records, sensor_height, air_temp, unit='cm', precision=1
     
     return (records.DateTime_UTC[0], snow_depth)
 
-# Specify sensor height
-sensor_height = 120.3 * units.cm
+# Load configuration
+f = open('/home/pi/workspace/Ultrasonic-Snow-Depth-Sensor/config.json', 'r')
+config = json.loads(f.read())
 
-# Specify air temeprature
-air_temp = 34 * units.degF
+# Specify sensor height
+sensor_height = config['SensorHeight'] * units(config['HeightUnit'])
+
+# Get air temeprature from Weather Underground
+air_temp = get_air_temperature(config['station'], config['APIkey'])
 
 # Read in sensor data
-records = pd.read_csv('snow_depth/obs/HC-SR04_Ultrasonic_Sensor_WaveSpeed_Readings.csv')
+records = pd.read_csv(f'{config["DataPath"]}/obs/HC-SR04_Ultrasonic_Sensor_WaveSpeed_Readings.csv')
 
 # Process sensor observations
 time, snow_depth = process_sensor_data(records, sensor_height, air_temp)
 
 # Export to file
-with open('snow_depth/snow_depth.csv', 'a') as f:
+with open(f'{config["DataPath"]}/snow_depth.csv', 'a') as f:
     f.write(f'\n{time},{snow_depth.magnitude},{snow_depth.units}')
