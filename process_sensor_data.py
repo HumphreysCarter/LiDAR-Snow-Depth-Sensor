@@ -1,6 +1,7 @@
 # Carter Humphreys, 11/02/2020
 # github.com/HumphreysCarter
 
+import json
 import math
 import numpy as np
 import pandas as pd
