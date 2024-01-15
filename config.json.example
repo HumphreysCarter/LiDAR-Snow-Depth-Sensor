@@ -1,7 +1,0 @@
-{
-  "DataPath": "/home/pi/snow_depth/",
-  "SensorHeight": 100,
-  "HeightUnit": "cm",
-  "station": "WU_STATION",
-  "APIkey": "WU_API"
-}
