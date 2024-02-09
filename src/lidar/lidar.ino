@@ -106,7 +106,7 @@ void blinkPin() {
 void postToServer(float avgDistance, float boardTmp) {
   String url = API_SERVER + "/sensors/lidar/" + getNormalizedMac();
   String payload = "{\"wifi\":" + String(WiFi.RSSI())
-      + ", \"average_distance\:" + String(avgDistance)
+      + ", \"average_distance\":" + String(avgDistance)
       + ", \"board_temp\":" + String(boardTmp)
       + "}";
 
