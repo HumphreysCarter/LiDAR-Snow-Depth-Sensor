@@ -4,17 +4,10 @@ import pandas as pd
 import http.server
 from urllib.parse import urlparse
 from datetime import datetime
+import argparse
 
-# Data staging directory
-api_directory = "/home/pi/lidar-snow/data/api/"
-archive_directory = "/home/pi/lidar-snow/data/archive/"
-
-# Create the directory if it doesn't exist
-if not os.path.exists(api_directory):
-    os.makedirs(api_directory)
-if not os.path.exists(archive_directory):
-    os.makedirs(archive_directory)
-
+api_directory = None
+archive_directory = None
 
 class JSONRequestHandler(http.server.BaseHTTPRequestHandler):
     def _send_response(self, code, message):
@@ -27,11 +20,12 @@ class JSONRequestHandler(http.server.BaseHTTPRequestHandler):
         content_length = int(self.headers['Content-Length'])
         post_data = self.rfile.read(content_length)
 
-        #try:
-        json_data = json.loads(post_data.decode('utf-8').replace('"average_distance:', '"average_distance":'))
-        #except json.JSONDecodeError:
-        #    self._send_response(400, "Invalid JSON data")
-        #    return
+        try:
+            json_data = json.loads(post_data.decode('utf-8'))
+        except json.JSONDecodeError:
+            print("Invalid JSON data")
+            self._send_response(400, "Invalid JSON data")
+            return
 
         # Extract the relevant part of the URL path
         url_path = urlparse(self.path).path
@@ -79,10 +73,23 @@ class JSONRequestHandler(http.server.BaseHTTPRequestHandler):
 
 
 if __name__ == "__main__":
-    port = 7070
-    server_address = ('', port)
+    parser = argparse.ArgumentParser(description="LiDAR snow depth data server")
+    parser.add_argument('--port', type=int, default=7070, help="Port number to run the server on")
+    parser.add_argument('--path', type=str, help="Directory for API and archive data")
+    args = parser.parse_args()
 
+    # Sert up data directories
+    api_directory = f'{args.path}/api/'
+    archive_directory = f'{args.path}/archive/'
+
+    # Create the directories if they don't exist
+    if not os.path.exists(api_directory):
+        os.makedirs(api_directory)
+    if not os.path.exists(archive_directory):
+        os.makedirs(archive_directory)
+
+    # Start server
+    server_address = ('', args.port)
     httpd = http.server.HTTPServer(server_address, JSONRequestHandler)
-
     print(f"Starting LiDAR snow depth data server on port {port}")
     httpd.serve_forever()
